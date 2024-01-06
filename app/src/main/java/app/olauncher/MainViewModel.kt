@@ -21,14 +21,20 @@ import app.olauncher.helper.SingleLiveEvent
 import app.olauncher.helper.WallpaperWorker
 import app.olauncher.helper.getAppsList
 import app.olauncher.helper.getHiddenAppsList
+import app.olauncher.helper.getUserHandleFromString
 import app.olauncher.helper.isOlauncherDefault
 import app.olauncher.helper.showToast
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.text.Collator
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
+    private val sharedPrefs = appContext.getSharedPreferences(appContext.getString(R.string.shared_pref_key), Context.MODE_PRIVATE)
+    private val collator = Collator.getInstance()
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -194,9 +200,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun saveInCache(appList: MutableList<AppModel>) {
+        val appJsonList = appList.map { it.toHashMap() }
+        val json = Json.encodeToString(appJsonList)
+        with (sharedPrefs.edit()) {
+            putString(appContext.getString(R.string.app_list_cache_key), json)
+            apply()
+        }
+    }
+
+    private fun loadFromCache(): MutableList<AppModel> {
+        val json = sharedPrefs.getString(appContext.getString(R.string.app_list_cache_key), appContext.getString(R.string.default_app_list))
+        val appJsonList = Json.decodeFromString<List<HashMap<String, String?>>>(json!!)
+        val appList = appJsonList.map {
+            AppModel(
+                it["appLabel"]!!,
+                collator.getCollationKey(it["appLabel"]),
+                it["appPackage"]!!,
+                it["activityClassName"],
+                getUserHandleFromString(appContext, it["user"]!!),
+            )
+        }
+        return appList.toMutableList()
+    }
+
     fun getAppList(includeHiddenApps: Boolean = false) {
         viewModelScope.launch {
+            appList.value = loadFromCache()
             appList.value = getAppsList(appContext, prefs, includeHiddenApps)
+            saveInCache(appList.value as MutableList<AppModel>)
         }
     }
 

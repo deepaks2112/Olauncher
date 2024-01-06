@@ -136,4 +136,7 @@
     <string name="about_olauncher">About Olauncher</string>
     <string name="digital_wellbeing">Digital Wellbeing</string>
     <string name="learn_more">Learn more</string>
+    <string name="shared_pref_key">shared_pref_key</string>
+    <string name="app_list_cache_key">app_list</string>
+    <string name="default_app_list">[]</string>
 </resources>

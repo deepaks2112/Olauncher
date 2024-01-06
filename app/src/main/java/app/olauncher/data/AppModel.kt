@@ -14,4 +14,14 @@ data class AppModel(
         key != null && other.key != null -> key.compareTo(other.key)
         else -> appLabel.compareTo(other.appLabel, true)
     }
+
+    fun toHashMap(): HashMap<String, String?> {
+        val map = HashMap<String, String?>()
+        map["appLabel"] = appLabel
+        map["key"] = key?.sourceString
+        map["appPackage"] = appPackage
+        map["activityClassName"] = activityClassName
+        map["user"] = user.toString()
+        return map
+    }
 }
