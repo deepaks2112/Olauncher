@@ -24,7 +24,9 @@ import app.olauncher.helper.getHiddenAppsList
 import app.olauncher.helper.getUserHandleFromString
 import app.olauncher.helper.isOlauncherDefault
 import app.olauncher.helper.showToast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.text.Collator
@@ -200,28 +202,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun saveInCache(appList: MutableList<AppModel>) {
-        val appJsonList = appList.map { it.toHashMap() }
-        val json = Json.encodeToString(appJsonList)
-        with (sharedPrefs.edit()) {
-            putString(appContext.getString(R.string.app_list_cache_key), json)
-            apply()
+    private suspend fun saveInCache(appList: MutableList<AppModel>) {
+        return withContext(Dispatchers.IO) {
+            val appJsonList = appList.map { it.toHashMap() }
+            val json = Json.encodeToString(appJsonList)
+            with(sharedPrefs.edit()) {
+                putString(appContext.getString(R.string.app_list_cache_key), json)
+                apply()
+            }
         }
     }
 
-    private fun loadFromCache(): MutableList<AppModel> {
-        val json = sharedPrefs.getString(appContext.getString(R.string.app_list_cache_key), appContext.getString(R.string.default_app_list))
-        val appJsonList = Json.decodeFromString<List<HashMap<String, String?>>>(json!!)
-        val appList = appJsonList.map {
-            AppModel(
-                it["appLabel"]!!,
-                collator.getCollationKey(it["appLabel"]),
-                it["appPackage"]!!,
-                it["activityClassName"],
-                getUserHandleFromString(appContext, it["user"]!!),
+    private suspend fun loadFromCache(): MutableList<AppModel> {
+        return withContext(Dispatchers.IO) {
+            val json = sharedPrefs.getString(
+                appContext.getString(R.string.app_list_cache_key),
+                appContext.getString(R.string.default_app_list)
             )
+            val appJsonList = Json.decodeFromString<List<HashMap<String, String?>>>(json!!)
+            val appList = appJsonList.map {
+                AppModel(
+                    it["appLabel"]!!,
+                    collator.getCollationKey(it["appLabel"]),
+                    it["appPackage"]!!,
+                    it["activityClassName"],
+                    getUserHandleFromString(appContext, it["user"]!!),
+                )
+            }
+            appList.toMutableList()
         }
-        return appList.toMutableList()
     }
 
     fun getAppList(includeHiddenApps: Boolean = false) {
