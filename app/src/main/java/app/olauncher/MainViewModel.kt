@@ -42,6 +42,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = Prefs(appContext)
     private val Context.dataStore by preferencesDataStore(name=appContext.getString(R.string.shared_pref_key))
     private val collator = Collator.getInstance()
+    private var isInit = true
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -238,9 +239,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getAppList(includeHiddenApps: Boolean = false) {
         viewModelScope.launch {
-            appList.value = loadFromCache()
+            if (isInit) {
+                appList.value = loadFromCache()
+            }
             appList.value = getAppsList(appContext, prefs, includeHiddenApps)
-            saveInCache(appList.value as MutableList<AppModel>)
+            if (isInit) {
+                saveInCache(appList.value as MutableList<AppModel>)
+            }
+            isInit = false
         }
     }
 
