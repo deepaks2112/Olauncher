@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Olauncher</string>
+    <string name="app_name" translatable="false">Dlauncher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="olauncher_pro" translatable="false"><u>Olauncher Pro</u></string>
@@ -136,6 +136,9 @@
     <string name="about_olauncher">About Olauncher</string>
     <string name="digital_wellbeing">Digital Wellbeing</string>
     <string name="learn_more">Learn more</string>
+    <string name="shared_pref_key">shared_pref_key</string>
+    <string name="app_list_cache_key">app_list</string>
+    <string name="default_app_list">[]</string>
     <string name="did_you_know">Did you know?</string>
     <string name="leave_a_review">Leave a review</string>
     <string name="review_message">Olauncher is free and always will be. It has no ads. It collects no data. Most importantly, it helps you in reducing your screen time and live a healthier digital life.

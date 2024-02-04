@@ -1,3 +1,7 @@
+plugins {
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.22'
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
@@ -14,7 +18,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "app.olauncher"
+        applicationId "app.dlauncher"
         minSdkVersion 23
         targetSdkVersion 33
         versionCode 77
@@ -62,4 +66,9 @@ dependencies {
     //Material dependency
     implementation 'com.google.android.material:material:1.9.0'
 
+    //Serialization
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0'
+
+    //Datastore
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
 }

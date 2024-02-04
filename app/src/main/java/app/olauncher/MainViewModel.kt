@@ -5,6 +5,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.LauncherApps
 import android.os.UserHandle
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -21,14 +24,25 @@ import app.olauncher.helper.SingleLiveEvent
 import app.olauncher.helper.WallpaperWorker
 import app.olauncher.helper.getAppsList
 import app.olauncher.helper.getHiddenAppsList
+import app.olauncher.helper.getUserHandleFromString
 import app.olauncher.helper.isOlauncherDefault
 import app.olauncher.helper.showToast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.text.Collator
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
+    private val Context.dataStore by preferencesDataStore(name=appContext.getString(R.string.shared_pref_key))
+    private val collator = Collator.getInstance()
+    private var isInit = true
 
     val firstOpen = MutableLiveData<Boolean>()
     val refreshHome = MutableLiveData<Boolean>()
@@ -196,9 +210,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private suspend fun saveInCache(appList: MutableList<AppModel>) {
+        return withContext(Dispatchers.IO) {
+            val appJsonList = appList.map { it.toHashMap() }
+            val json = Json.encodeToString(appJsonList)
+            appContext.dataStore.edit {
+                it[stringPreferencesKey(appContext.getString(R.string.app_list_cache_key))] = json
+            }
+        }
+    }
+
+    private suspend fun loadFromCache(): MutableList<AppModel> {
+        return withContext(Dispatchers.IO) {
+            val json = appContext.dataStore.data.map {
+                    it[stringPreferencesKey(appContext.getString(R.string.app_list_cache_key))]
+                }.first()?: appContext.getString(R.string.default_app_list)
+            val appJsonList = Json.decodeFromString<List<HashMap<String, String?>>>(json)
+            val appList = appJsonList.map {
+                AppModel(
+                    it["appLabel"]!!,
+                    collator.getCollationKey(it["appLabel"]),
+                    it["appPackage"]!!,
+                    it["activityClassName"],
+                    getUserHandleFromString(appContext, it["user"]!!),
+                )
+            }
+            appList.toMutableList()
+        }
+    }
+
     fun getAppList(includeHiddenApps: Boolean = false) {
         viewModelScope.launch {
+            if (isInit) {
+                appList.value = loadFromCache()
+            }
             appList.value = getAppsList(appContext, prefs, includeHiddenApps)
+            if (isInit) {
+                saveInCache(appList.value as MutableList<AppModel>)
+            }
+            isInit = false
         }
     }
 
