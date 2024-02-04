@@ -8,11 +8,19 @@ object Constants {
     }
 
     object Dialog {
+        const val REVIEW = "REVIEW"
         const val RATE = "RATE"
         const val SHARE = "SHARE"
         const val HIDDEN = "HIDDEN"
         const val KEYBOARD = "KEYBOARD"
         const val DIGITAL_WELLBEING = "DIGITAL_WELLBEING"
+    }
+
+    object UserState {
+        const val START = "START"
+        const val REVIEW = "REVIEW"
+        const val RATE = "RATE"
+        const val SHARE = "SHARE"
     }
 
     object DateTime {
@@ -72,9 +80,11 @@ object Constants {
     const val REQUEST_CODE_LAUNCHER_SELECTOR = 678
 
     const val HINT_RATE_US = 15
-    const val HINT_SHARE = 25
 
     const val LONG_PRESS_DELAY_MS = 500L
+    const val ONE_DAY_IN_MILLIS = 86400000L
+    const val ONE_HOUR_IN_MILLIS = 3600000L
+    const val ONE_MINUTE_IN_MILLIS = 60000L
 
     const val MIN_ANIM_REFRESH_RATE = 10f
 
@@ -92,5 +102,6 @@ object Constants {
     const val URL_DIGITAL_WELLBEING_LEARN_MORE = "https://tanujnotes.substack.com/p/digital-wellbeing-app-on-android?utm_source=olauncher"
 
     const val DIGITAL_WELLBEING_PACKAGE_NAME = "com.google.android.apps.wellbeing"
+    const val DIGITAL_WELLBEING_SAMSUNG_PACKAGE_NAME = "com.samsung.android.forest"
     const val WALLPAPER_WORKER_NAME = "WALLPAPER_WORKER_NAME"
 }

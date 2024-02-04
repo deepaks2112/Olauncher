@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
         if (prefs.firstOpen) {
             viewModel.firstOpen(true)
             prefs.firstOpen = false
+            prefs.firstOpenTime = System.currentTimeMillis()
         }
 
         initClickListeners()
@@ -106,9 +107,22 @@ class MainActivity : AppCompatActivity() {
 //            else
 //                showLauncherSelector(Constants.REQUEST_CODE_LAUNCHER_SELECTOR)
         }
+        viewModel.checkForMessages.observe(this) {
+            checkForMessages()
+        }
         viewModel.showDialog.observe(this) {
             when (it) {
+                Constants.Dialog.REVIEW -> {
+                    prefs.userState = Constants.UserState.RATE
+                    showMessageDialog(getString(R.string.did_you_know), getString(R.string.review_message), getString(R.string.leave_a_review)) {
+                        binding.messageLayout.visibility = View.GONE
+                        prefs.rateClicked = true
+                        rateApp()
+                    }
+                }
+
                 Constants.Dialog.RATE -> {
+                    prefs.userState = Constants.UserState.SHARE
                     showMessageDialog(getString(R.string.app_name), getString(R.string.rate_us_message), getString(R.string.rate_now)) {
                         binding.messageLayout.visibility = View.GONE
                         prefs.rateClicked = true
@@ -117,6 +131,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 Constants.Dialog.SHARE -> {
+                    prefs.shareShownTime = System.currentTimeMillis()
                     showMessageDialog(getString(R.string.app_name), getString(R.string.share_message), getString(R.string.share_now)) {
                         binding.messageLayout.visibility = View.GONE
                         shareApp()
@@ -153,12 +168,47 @@ class MainActivity : AppCompatActivity() {
         binding.messageLayout.visibility = View.VISIBLE
     }
 
+    private fun checkForMessages() {
+        if (prefs.firstOpenTime == 0L)
+            prefs.firstOpenTime = System.currentTimeMillis()
+
+        when (prefs.userState) {
+            Constants.UserState.START -> {
+                if (prefs.firstOpenTime.hasBeenDays(1))
+                    prefs.userState = Constants.UserState.REVIEW
+            }
+
+            Constants.UserState.REVIEW -> {
+                if (prefs.rateClicked)
+                    prefs.userState = Constants.UserState.SHARE
+                else if (isOlauncherDefault(this))
+                    viewModel.showDialog.postValue(Constants.Dialog.REVIEW)
+            }
+
+            Constants.UserState.RATE -> {
+                if (prefs.rateClicked)
+                    prefs.userState = Constants.UserState.SHARE
+                else if (isOlauncherDefault(this)
+                    && prefs.firstOpenTime.hasBeenDays(7)
+                    && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) >= 12
+                ) viewModel.showDialog.postValue(Constants.Dialog.RATE)
+            }
+
+            Constants.UserState.SHARE -> {
+                if (isOlauncherDefault(this) && prefs.firstOpenTime.hasBeenDays(14)
+                    && prefs.shareShownTime.hasBeenDays(42)
+                    && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) >= 12
+                ) viewModel.showDialog.postValue(Constants.Dialog.SHARE)
+            }
+        }
+    }
+
     @SuppressLint("SourceLockedOrientationActivity")
     private fun setupOrientation() {
-        if (isTablet(this)) return
+        if (isTablet(this) || Build.VERSION.SDK_INT == Build.VERSION_CODES.O)
+            return
         // In Android 8.0, windowIsTranslucent cannot be used with screenOrientation=portrait
-        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.O)
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
     private fun backToHomeScreen() {
