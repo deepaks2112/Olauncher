@@ -1,0 +1,5 @@
+services:
+  dlauncher-builder:
+    image: dlauncher-builder:latest
+    volumes:
+      - ./release_outputs:/app/release_outputs
